@@ -1,299 +1,215 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Controle de Aluguéis</title>
   <style>
     body {
       font-family: Arial, sans-serif;
-      margin: 20px;
+      margin: 0; padding: 0;
+      background: #f4f4f4;
     }
-    .menu {
-      margin-bottom: 20px;
+    header {
+      background: #333; color: #fff;
+      padding: 15px;
+      text-align: center;
     }
-    .menu button {
+    nav {
+      display: flex;
+      justify-content: center;
+      background: #444;
+    }
+    nav button {
       padding: 10px 20px;
-      margin-right: 10px;
-      border-radius: 8px;
       border: none;
-      background-color: #007bff;
+      background: #444;
       color: white;
       cursor: pointer;
     }
-    .menu button:hover {
-      background-color: #0056b3;
+    nav button.active {
+      background: #666;
     }
-    .section {
+    .content {
+      padding: 20px;
       display: none;
     }
-    .section.active {
+    .content.active {
       display: block;
+    }
+    input, select, button {
+      padding: 10px;
+      margin: 5px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
     }
     table {
       width: 100%;
       border-collapse: collapse;
-      margin-top: 10px;
+      margin-top: 15px;
     }
     th, td {
       border: 1px solid #ccc;
       padding: 8px;
-      text-align: left;
     }
-    .actions {
-      margin-top: 10px;
-    }
-    .actions button {
-      margin-right: 10px;
-      padding: 6px 12px;
-      border-radius: 5px;
-      background-color: #dc3545;
+    .btn-clear {
+      background: #e74c3c;
       color: white;
-      border: none;
-      cursor: pointer;
-    }
-    .actions button:hover {
-      background-color: #c82333;
     }
   </style>
 </head>
 <body>
 
-  <div class="menu">
-    <button onclick="toggleSection('alugueis')">Aluguéis</button>
-    <button onclick="toggleSection('financeiro')">Financeiro</button>
-  </div>
+<header>
+  <h1>Controle de Aluguéis</h1>
+</header>
 
-  <div id="alugueis" class="section active">
-    <h2>Cadastro de Aluguéis</h2>
-    <input type="text" id="nomeCliente" placeholder="Nome do Cliente"><br><br>
-    <input type="text" id="cpfCliente" placeholder="CPF"><br><br>
-    <input type="text" id="produto" placeholder="Produto alugado"><br><br>
-    <input type="number" id="valor" placeholder="Valor"><br><br>
-    <button onclick="salvarAluguel()">Salvar</button>
+<nav>
+  <button class="tab-btn active" data-tab="alugueis">Aluguéis</button>
+  <button class="tab-btn" data-tab="financeiro">Financeiro</button>
+</nav>
 
-    <div class="actions">
-      <button onclick="limparAlugueis()">Limpar Todos os Aluguéis</button>
-    </div>
+<!-- Aluguéis -->
+<div id="alugueis" class="content active">
+  <h2>Registro de Aluguéis</h2>
+  <input type="text" id="produto" placeholder="Produto">
+  <input type="text" id="valor" placeholder="Valor (R$)">
+  <input type="text" id="nomePessoa" placeholder="Nome da Pessoa">
+  <input type="text" id="cpf" placeholder="CPF (somente números)">
+  <button onclick="registrarAluguel()">Registrar</button>
+  <button class="btn-clear" onclick="limparAlugueis()">Limpar Registros</button>
+  <table>
+    <thead><tr><th>Produto</th><th>Valor</th><th>Nome</th><th>CPF</th></tr></thead>
+    <tbody id="tabela-alugueis"></tbody>
+  </table>
+</div>
 
-    <h3>Registros</h3>
-    <table id="tabelaAlugueis">
-      <thead>
-        <tr>
-          <th>Cliente</th>
-          <th>CPF</th>
-          <th>Produto</th>
-          <th>Valor</th>
-        </tr>
-      </thead>
-      <tbody></tbody>
-    </table>
-  </div>
+<!-- Financeiro -->
+<div id="financeiro" class="content">
+  <h2>Controle Financeiro</h2>
+  <select id="tipo">
+    <option value="entrada">Entrada</option>
+    <option value="saida">Saída</option>
+  </select>
+  <input type="text" id="descricao" placeholder="Descrição">
+  <input type="number" id="valorFinanceiro" placeholder="Valor (R$)">
+  <input type="text" id="nomePagador" placeholder="Nome">
+  <input type="date" id="dataPagamento">
+  <button onclick="registrarFinanceiro()">Registrar</button>
+  <button class="btn-clear" onclick="limparFinanceiro()">Limpar Registros</button>
+  <h3>Total: R$ <span id="totalFinanceiro">0.00</span></h3>
+  <table>
+    <thead><tr><th>Tipo</th><th>Descrição</th><th>Valor</th><th>Nome</th><th>Data</th></tr></thead>
+    <tbody id="tabela-financeiro"></tbody>
+  </table>
+</div>
 
-  <div id="financeiro" class="section">
-    <h2>Controle Financeiro</h2>
-    <select id="tipoFinanceiro">
-      <option value="">Tipo</option>
-      <option value="entrada">Entrada</option>
-      <option value="saida">Saída</option>
-    </select><br><br>
-    <input type="text" id="nomeFinanceiro" placeholder="Nome"><br><br>
-    <input type="number" id="valorFinanceiro" placeholder="Valor"><br><br>
-    <input type="date" id="dataFinanceiro"><br><br>
-    <input type="text" id="descricao" placeholder="Descrição (opcional)"><br><br>
-    <button onclick="salvarFinanceiro()">Salvar</button>
+<!-- Firebase e Lógica -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.1/firebase-app.js";
+  import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.11.1/firebase-firestore.js";
 
-    <div class="actions">
-      <button onclick="limparFinanceiro()">Limpar Financeiro</button>
-    </div>
+  const firebaseConfig = {
+    apiKey: "AIzaSyDPi5IQe14zspJYsQ-cLwGdvRruFf93ex4",
+    authDomain: "novo-controle-62bbf.firebaseapp.com",
+    projectId: "novo-controle-62bbf",
+    storageBucket: "novo-controle-62bbf.firebasestorage.app",
+    messagingSenderId: "987513556428",
+    appId: "1:987513556428:web:b0a9798f6ed4ed909be169"
+  };
 
-    <h3>Resumo</h3>
-    <div id="resumoFinanceiro"></div>
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
 
-    <h3>Filtrar por Período</h3>
-    <input type="date" id="dataInicio">
-    <input type="date" id="dataFim">
-    <button onclick="filtrarPeriodo()">Filtrar</button>
-    <button onclick="limparFiltro()">Limpar Filtro</button>
+  // Abas
+  document.querySelectorAll(".tab-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+      document.querySelectorAll(".content").forEach(c => c.classList.remove("active"));
+      btn.classList.add("active");
+      document.getElementById(btn.dataset.tab).classList.add("active");
+    });
+  });
 
-    <h3>Movimentações</h3>
-    <table id="tabelaFinanceiro">
-      <thead>
-        <tr>
-          <th>Tipo</th>
-          <th>Nome</th>
-          <th>Data</th>
-          <th>Valor</th>
-          <th>Descrição</th>
-        </tr>
-      </thead>
-      <tbody></tbody>
-    </table>
-  </div>
+  // Aluguéis
+  async function registrarAluguel() {
+    const produto = document.getElementById("produto").value;
+    const valor = document.getElementById("valor").value;
+    const nomePessoa = document.getElementById("nomePessoa").value;
+    const cpf = document.getElementById("cpf").value;
 
-  <script type="module">
-    // Firebase config
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
-    import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, query, orderBy, where } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
-
-    const firebaseConfig = {
-  apiKey: "AIzaSyDPi5IQe14zspJYsQ-cLwGdvRruFf93ex4",
-  authDomain: "novo-controle-62bbf.firebaseapp.com",
-  projectId: "novo-controle-62bbf",
-  storageBucket: "novo-controle-62bbf.firebasestorage.app",
-  messagingSenderId: "987513556428",
-  appId: "1:987513556428:web:d01165c4dcd36cd79be169"
-    };
-
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
-
-    function toggleSection(id) {
-      document.querySelectorAll('.section').forEach(sec => sec.classList.remove('active'));
-      document.getElementById(id).classList.add('active');
+    if (!produto || !valor || !nomePessoa || !cpf.match(/^\d{11}$/)) {
+      alert("Preencha todos os campos corretamente.");
+      return;
     }
 
-    async function salvarAluguel() {
-      const nome = document.getElementById('nomeCliente').value.trim();
-      const cpf = document.getElementById('cpfCliente').value.trim();
-      const produto = document.getElementById('produto').value.trim();
-      const valor = parseFloat(document.getElementById('valor').value);
-
-      if (!nome || !cpf || !produto || isNaN(valor)) {
-        alert('Preencha todos os campos corretamente!');
-        return;
-      }
-
-      await addDoc(collection(db, 'aluguels'), { nome, cpf, produto, valor });
-      alert('Aluguel salvo!');
-      document.getElementById('nomeCliente').value = '';
-      document.getElementById('cpfCliente').value = '';
-      document.getElementById('produto').value = '';
-      document.getElementById('valor').value = '';
-      carregarAlugueis();
-    }
-
-    async function carregarAlugueis() {
-      const snapshot = await getDocs(collection(db, 'aluguels'));
-      const tbody = document.querySelector('#tabelaAlugueis tbody');
-      tbody.innerHTML = '';
-      snapshot.forEach(doc => {
-        const d = doc.data();
-        tbody.innerHTML += `
-          <tr>
-            <td>${d.nome}</td>
-            <td>${d.cpf}</td>
-            <td>${d.produto}</td>
-            <td>R$ ${d.valor.toFixed(2)}</td>
-          </tr>
-        `;
-      });
-    }
-
-    async function limparAlugueis() {
-      if (!confirm("Tem certeza que deseja apagar todos os registros de aluguéis?")) return;
-      const snapshot = await getDocs(collection(db, 'aluguels'));
-      snapshot.forEach(async (d) => await deleteDoc(doc(db, 'aluguels', d.id)));
-      alert("Registros de aluguel apagados.");
-      carregarAlugueis();
-    }
-
-    async function salvarFinanceiro() {
-      const tipo = document.getElementById('tipoFinanceiro').value;
-      const nome = document.getElementById('nomeFinanceiro').value.trim();
-      const valor = parseFloat(document.getElementById('valorFinanceiro').value);
-      const data = document.getElementById('dataFinanceiro').value;
-      const descricao = document.getElementById('descricao').value.trim();
-
-      if (!tipo || !nome || isNaN(valor) || !data) {
-        alert('Preencha todos os campos obrigatórios!');
-        return;
-      }
-
-      await addDoc(collection(db, 'financeiro'), {
-        tipo, nome, valor, data, descricao,
-        timestamp: new Date(data).getTime()
-      });
-
-      alert('Movimentação salva!');
-      document.getElementById('tipoFinanceiro').value = '';
-      document.getElementById('nomeFinanceiro').value = '';
-      document.getElementById('valorFinanceiro').value = '';
-      document.getElementById('dataFinanceiro').value = '';
-      document.getElementById('descricao').value = '';
-      carregarMovimentacoes();
-    }
-
-    async function carregarMovimentacoes(filtroInicio, filtroFim) {
-      const tbody = document.querySelector('#tabelaFinanceiro tbody');
-      tbody.innerHTML = '<tr><td colspan="5">Carregando...</td></tr>';
-
-      let q = query(collection(db, 'financeiro'), orderBy('timestamp', 'desc'));
-      if (filtroInicio) q = query(q, where('timestamp', '>=', filtroInicio.getTime()));
-      if (filtroFim) q = query(q, where('timestamp', '<=', filtroFim.getTime()));
-
-      const snapshot = await getDocs(q);
-      const dados = [];
-      let html = '';
-
-      snapshot.forEach(doc => {
-        const d = doc.data();
-        dados.push(d);
-        html += `<tr>
-          <td>${d.tipo === 'entrada' ? 'Entrada' : 'Saída'}</td>
-          <td>${d.nome}</td>
-          <td>${new Date(d.data).toLocaleDateString()}</td>
-          <td>R$ ${d.valor.toFixed(2)}</td>
-          <td>${d.descricao || ''}</td>
-        </tr>`;
-      });
-
-      tbody.innerHTML = html || '<tr><td colspan="5">Nenhuma movimentação encontrada.</td></tr>';
-      atualizarResumo(dados);
-    }
-
-    function atualizarResumo(dados) {
-      let totalEntradas = 0, totalSaidas = 0;
-      dados.forEach(d => {
-        if (d.tipo === 'entrada') totalEntradas += d.valor;
-        else totalSaidas += d.valor;
-      });
-      const saldo = totalEntradas - totalSaidas;
-      document.getElementById('resumoFinanceiro').textContent =
-        `Total Entradas: R$ ${totalEntradas.toFixed(2)} | Total Saídas: R$ ${totalSaidas.toFixed(2)} | Saldo: R$ ${saldo.toFixed(2)}`;
-    }
-
-    async function limparFinanceiro() {
-      if (!confirm("Tem certeza que deseja apagar TODO o controle financeiro?")) return;
-      const snapshot = await getDocs(collection(db, 'financeiro'));
-      snapshot.forEach(async (d) => await deleteDoc(doc(db, 'financeiro', d.id)));
-      alert("Controle financeiro apagado.");
-      carregarMovimentacoes();
-    }
-
-    function filtrarPeriodo() {
-      const inicio = document.getElementById('dataInicio').value;
-      const fim = document.getElementById('dataFim').value;
-      const d1 = inicio ? new Date(inicio) : null;
-      const d2 = fim ? new Date(fim) : null;
-
-      if (d1 && d2 && d1 > d2) {
-        alert('Data início não pode ser maior que a data fim!');
-        return;
-      }
-
-      carregarMovimentacoes(d1, d2);
-    }
-
-    function limparFiltro() {
-      document.getElementById('dataInicio').value = '';
-      document.getElementById('dataFim').value = '';
-      carregarMovimentacoes();
-    }
-
-    // Inicializa
+    await addDoc(collection(db, "alugueis"), { produto, valor, nomePessoa, cpf });
     carregarAlugueis();
-    carregarMovimentacoes();
-  </script>
+  }
+
+  async function carregarAlugueis() {
+    const tabela = document.getElementById("tabela-alugueis");
+    tabela.innerHTML = "";
+    const querySnapshot = await getDocs(collection(db, "alugueis"));
+    querySnapshot.forEach(doc => {
+      const d = doc.data();
+      const row = `<tr><td>${d.produto}</td><td>${d.valor}</td><td>${d.nomePessoa}</td><td>${d.cpf}</td></tr>`;
+      tabela.innerHTML += row;
+    });
+  }
+
+  async function limparAlugueis() {
+    const querySnapshot = await getDocs(collection(db, "alugueis"));
+    querySnapshot.forEach(async docSnap => {
+      await deleteDoc(doc(db, "alugueis", docSnap.id));
+    });
+    carregarAlugueis();
+  }
+
+  // Financeiro
+  async function registrarFinanceiro() {
+    const tipo = document.getElementById("tipo").value;
+    const descricao = document.getElementById("descricao").value;
+    const valor = parseFloat(document.getElementById("valorFinanceiro").value);
+    const nomePagador = document.getElementById("nomePagador").value;
+    const dataPagamento = document.getElementById("dataPagamento").value;
+
+    if (!descricao || isNaN(valor) || !nomePagador || !dataPagamento) {
+      alert("Preencha todos os campos corretamente.");
+      return;
+    }
+
+    await addDoc(collection(db, "financeiro"), { tipo, descricao, valor, nomePagador, dataPagamento });
+    carregarFinanceiro();
+  }
+
+  async function carregarFinanceiro() {
+    const tabela = document.getElementById("tabela-financeiro");
+    tabela.innerHTML = "";
+    let total = 0;
+    const querySnapshot = await getDocs(collection(db, "financeiro"));
+    querySnapshot.forEach(doc => {
+      const d = doc.data();
+      const sinal = d.tipo === "saida" ? -1 : 1;
+      total += d.valor * sinal;
+      const row = `<tr><td>${d.tipo}</td><td>${d.descricao}</td><td>R$ ${d.valor.toFixed(2)}</td><td>${d.nomePagador}</td><td>${d.dataPagamento}</td></tr>`;
+      tabela.innerHTML += row;
+    });
+    document.getElementById("totalFinanceiro").innerText = total.toFixed(2);
+  }
+
+  async function limparFinanceiro() {
+    const querySnapshot = await getDocs(collection(db, "financeiro"));
+    querySnapshot.forEach(async docSnap => {
+      await deleteDoc(doc(db, "financeiro", docSnap.id));
+    });
+    carregarFinanceiro();
+  }
+
+  // Inicializar dados
+  carregarAlugueis();
+  carregarFinanceiro();
+</script>
 
 </body>
 </html>
