@@ -2,10 +2,11 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Controle de Aluguéis</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Controle de Aluguéis + Financeiro</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet" />
   <style>
+    /* Mesmos estilos do exemplo anterior, arredondados e limpos */
     body {
       margin: 0;
       font-family: 'Inter', sans-serif;
@@ -88,7 +89,7 @@
     <input type="text" id="nomePessoa" placeholder="Nome da Pessoa" />
     <input type="text" id="cpf" placeholder="CPF (somente números)" />
     <button class="submit" onclick="salvarAluguel()">Salvar</button>
-    <div id="listaAlugueis"></div>
+    <pre id="listaAlugueis"></pre>
   </section>
 
   <section id="financeiro">
@@ -104,10 +105,11 @@
     <button class="submit" onclick="salvarMovimentacao()">Registrar</button>
 
     <div>
-      <label>Filtrar por período:</label><br>
+      <label>Filtrar por período:</label><br />
       <input type="date" id="dataInicio" /> até
       <input type="date" id="dataFim" />
       <button onclick="filtrarPeriodo()">Filtrar</button>
+      <button onclick="limparFiltro()">Limpar Filtro</button>
     </div>
 
     <table id="tabelaFinanceiro">
@@ -126,18 +128,37 @@
     <div class="totals" id="resumoFinanceiro"></div>
   </section>
 
-  <script>
-    const alugueis = [];
-    const movimentacoes = [];
+  <!-- Firebase SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
+  <script>
+    // Configuração do Firebase - substitua pelos seus dados
+    const firebaseConfig = {
+      apiKey: "AIzaSyD43W9tbnk7dpnTWwiIMEX1OqLJAYNhuhQ",
+      authDomain: "controle-alugueis-7db29.firebaseapp.com",
+      projectId: "controle-alugueis-7db29",
+      storageBucket: "controle-alugueis-7db29.appspot.com",
+      messagingSenderId: "280373132735",
+      appId: "1:280373132735:web:7e79cc69a69cb6ee6a350a"
+    };
+
+    // Inicializa Firebase
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    // Toggle de abas
     function toggleSection(id) {
       document.querySelectorAll('section').forEach(sec => sec.classList.remove('active'));
       document.getElementById(id).classList.add('active');
+      if (id === 'financeiro') carregarMovimentacoes(); // Carrega dados ao abrir financeiro
+      if (id === 'alugueis') carregarAlugueis(); // Carrega dados ao abrir aluguéis
     }
 
+    // Validação CPF simples
     function validarCPF(cpf) {
       cpf = cpf.replace(/\D/g, '');
-      if (cpf.length !== 11 || /^([0-9])\1+$/.test(cpf)) return false;
+      if (cpf.length !== 11 || /^(\d)\1+$/.test(cpf)) return false;
       let soma = 0;
       for (let i = 0; i < 9; i++) soma += parseInt(cpf.charAt(i)) * (10 - i);
       let dig1 = 11 - (soma % 11);
@@ -150,67 +171,177 @@
       return dig2 === parseInt(cpf.charAt(10));
     }
 
-    function salvarAluguel() {
-      const produto = document.getElementById('produto').value;
+    // Salvar aluguel no Firestore
+    async function salvarAluguel() {
+      const produto = document.getElementById('produto').value.trim();
       const valor = parseFloat(document.getElementById('valor').value);
-      const nome = document.getElementById('nomePessoa').value;
-      const cpf = document.getElementById('cpf').value;
+      const nome = document.getElementById('nomePessoa').value.trim();
+      const cpf = document.getElementById('cpf').value.trim();
 
-      if (!produto || !valor || !nome || !cpf) return alert('Preencha todos os campos');
-      if (!validarCPF(cpf)) return alert('CPF inválido');
+      if (!produto || !valor || !nome || !cpf) {
+        alert('Preencha todos os campos');
+        return;
+      }
+      if (!validarCPF(cpf)) {
+        alert('CPF inválido');
+        return;
+      }
 
-      alugueis.push({ produto, valor, nome, cpf });
-      document.getElementById('listaAlugueis').innerText = JSON.stringify(alugueis, null, 2);
+      try {
+        await db.collection('aluguéis').add({
+          produto,
+          valor,
+          nome,
+          cpf,
+          data: new Date().toISOString()
+        });
+        alert('Aluguel salvo com sucesso!');
+        document.getElementById('produto').value = '';
+        document.getElementById('valor').value = '';
+        document.getElementById('nomePessoa').value = '';
+        document.getElementById('cpf').value = '';
+        carregarAlugueis();
+      } catch (e) {
+        alert('Erro ao salvar aluguel: ' + e.message);
+      }
     }
 
-    function salvarMovimentacao() {
+    // Carregar aluguéis do Firestore
+    async function carregarAlugueis() {
+      const lista = document.getElementById('listaAlugueis');
+      lista.textContent = 'Carregando...';
+      try {
+        const snapshot = await db.collection('aluguéis').orderBy('data', 'desc').get();
+        if (snapshot.empty) {
+          lista.textContent = 'Nenhum aluguel registrado.';
+          return;
+        }
+        let html = '<ul>';
+        snapshot.forEach(doc => {
+          const d = doc.data();
+          html += `<li><strong>${d.produto}</strong> - R$ ${d.valor.toFixed(2)} - ${d.nome} - CPF: ${d.cpf} - ${new Date(d.data).toLocaleString()}</li>`;
+        });
+        html += '</ul>';
+        lista.innerHTML = html;
+      } catch (e) {
+        lista.textContent = 'Erro ao carregar aluguéis: ' + e.message;
+      }
+    }
+
+    // Salvar movimentação financeira no Firestore
+    async function salvarMovimentacao() {
       const tipo = document.getElementById('tipo').value;
-      const nome = document.getElementById('nomeFinanceiro').value;
+      const nome = document.getElementById('nomeFinanceiro').value.trim();
       const valor = parseFloat(document.getElementById('valorFinanceiro').value);
       const data = document.getElementById('dataFinanceiro').value;
-      const descricao = document.getElementById('descricao').value;
+      const descricao = document.getElementById('descricao').value.trim();
 
-      if (!nome || !valor || !data) return alert('Preencha os campos obrigatórios');
+      if (!tipo || !nome || !valor || !data) {
+        alert('Preencha todos os campos obrigatórios!');
+        return;
+      }
 
-      movimentacoes.push({ tipo, nome, valor, data, descricao });
-      renderizarTabela(movimentacoes);
+      try {
+        await db.collection('financeiro').add({
+          tipo,
+          nome,
+          valor,
+          data,
+          descricao,
+          timestamp: new Date(data).getTime()
+        });
+        alert('Movimentação salva!');
+        document.getElementById('nomeFinanceiro').value = '';
+        document.getElementById('valorFinanceiro').value = '';
+        document.getElementById('dataFinanceiro').value = '';
+        document.getElementById('descricao').value = '';
+        carregarMovimentacoes();
+      } catch (e) {
+        alert('Erro ao salvar movimentação: ' + e.message);
+      }
     }
 
-    function renderizarTabela(lista) {
+    // Carregar movimentações do Firestore (com filtro opcional)
+    async function carregarMovimentacoes(filtroInicio, filtroFim) {
       const tbody = document.querySelector('#tabelaFinanceiro tbody');
-      tbody.innerHTML = '';
+      tbody.innerHTML = '<tr><td colspan="5">Carregando...</td></tr>';
+
+      try {
+        let query = db.collection('financeiro').orderBy('timestamp', 'desc');
+
+        if (filtroInicio) {
+          query = query.where('timestamp', '>=', filtroInicio.getTime());
+        }
+        if (filtroFim) {
+          query = query.where('timestamp', '<=', filtroFim.getTime());
+        }
+
+        const snapshot = await query.get();
+        if (snapshot.empty) {
+          tbody.innerHTML = '<tr><td colspan="5">Nenhuma movimentação encontrada.</td></tr>';
+          atualizarResumo([]);
+          return;
+        }
+
+        const dados = [];
+        let html = '';
+        snapshot.forEach(doc => {
+          const d = doc.data();
+          dados.push(d);
+          html += `<tr>
+            <td>${d.tipo === 'entrada' ? 'Entrada' : 'Saída'}</td>
+            <td>${d.nome}</td>
+            <td>${new Date(d.data).toLocaleDateString()}</td>
+            <td>R$ ${d.valor.toFixed(2)}</td>
+            <td>${d.descricao || ''}</td>
+          </tr>`;
+        });
+        tbody.innerHTML = html;
+        atualizarResumo(dados);
+      } catch (e) {
+        tbody.innerHTML = '<tr><td colspan="5">Erro ao carregar dados: ' + e.message + '</td></tr>';
+      }
+    }
+
+    // Atualiza o resumo financeiro (totais)
+    function atualizarResumo(dados) {
       let totalEntradas = 0;
       let totalSaidas = 0;
 
-      lista.forEach(item => {
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-          <td>${item.tipo}</td>
-          <td>${item.nome}</td>
-          <td>${item.data}</td>
-          <td>R$ ${item.valor.toFixed(2)}</td>
-          <td>${item.descricao || ''}</td>
-        `;
-        tbody.appendChild(tr);
-
-        if (item.tipo === 'entrada') totalEntradas += item.valor;
-        else totalSaidas += item.valor;
+      dados.forEach(d => {
+        if (d.tipo === 'entrada') totalEntradas += d.valor;
+        else if (d.tipo === 'saida') totalSaidas += d.valor;
       });
 
       const saldo = totalEntradas - totalSaidas;
-      document.getElementById('resumoFinanceiro').innerText =
-        `Entradas: R$ ${totalEntradas.toFixed(2)} | Saídas: R$ ${totalSaidas.toFixed(2)} | Saldo: R$ ${saldo.toFixed(2)}`;
+      const resumo = document.getElementById('resumoFinanceiro');
+      resumo.textContent = `Total Entradas: R$ ${totalEntradas.toFixed(2)} | Total Saídas: R$ ${totalSaidas.toFixed(2)} | Saldo: R$ ${saldo.toFixed(2)}`;
     }
 
+    // Filtrar por período
     function filtrarPeriodo() {
       const inicio = document.getElementById('dataInicio').value;
       const fim = document.getElementById('dataFim').value;
+      let dataInicio = inicio ? new Date(inicio) : null;
+      let dataFim = fim ? new Date(fim) : null;
 
-      if (!inicio || !fim) return alert('Selecione o período.');
+      if (dataInicio && dataFim && dataInicio > dataFim) {
+        alert('Data início deve ser menor ou igual à data fim');
+        return;
+      }
 
-      const filtradas = movimentacoes.filter(m => m.data >= inicio && m.data <= fim);
-      renderizarTabela(filtradas);
+      carregarMovimentacoes(dataInicio, dataFim);
     }
+
+    // Limpar filtro
+    function limparFiltro() {
+      document.getElementById('dataInicio').value = '';
+      document.getElementById('dataFim').value = '';
+      carregarMovimentacoes();
+    }
+
+    // Inicializa com a aba Aluguéis aberta
+    toggleSection('alugueis');
   </script>
 </body>
 </html>
