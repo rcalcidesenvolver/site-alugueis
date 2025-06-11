@@ -2,267 +2,135 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
-  <title>Controle de Aluguéis</title>
+  <title>Controle de Aluguéis com Firebase</title>
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      padding: 20px;
-      background: #f2f2f2;
-      color: #333;
-    }
-    h1, h2 {
-      color: #222;
-    }
-    input, button, select {
-      margin: 5px 0;
-      padding: 8px;
-      font-size: 14px;
-      width: 100%;
-      max-width: 300px;
-    }
-    button {
-      cursor: pointer;
-      background-color: #4CAF50;
-      color: white;
-      border: none;
-      transition: background-color 0.3s;
-    }
-    button:hover {
-      background-color: #45a049;
-    }
-    .danger {
-      background-color: #d9534f;
-    }
-    .danger:hover {
-      background-color: #c9302c;
-    }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 15px;
-      background: #fff;
-    }
-    th, td {
-      border: 1px solid #ccc;
-      padding: 8px;
-      text-align: left;
-    }
-    th {
-      background-color: #eee;
-    }
-    .actions button {
-      margin-right: 5px;
-    }
+    body { font-family: Arial, sans-serif; max-width: 700px; margin: 20px auto; }
+    input, button { padding: 8px; margin: 6px 0; width: 100%; box-sizing: border-box; }
+    table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+    th, td { border: 1px solid #aaa; padding: 8px; text-align: left; }
+    th { background-color: #eee; }
+    .error { color: red; }
   </style>
 </head>
 <body>
-  <h1>Registro de Aluguéis</h1>
+  <h1>Controle de Aluguéis de Móveis (Firebase)</h1>
 
-  <h2>Adicionar / Editar Aluguel</h2>
-  <input id="nomePessoa" placeholder="Nome da pessoa" />
-  <input id="cpfPessoa" placeholder="CPF (000.000.000-00)" />
-  <input id="item" placeholder="Item alugado" />
-  <input id="valor" placeholder="Valor (R$)" type="number" />
-  <button onclick="salvarAluguel()">Salvar</button>
+  <form id="formAluguel">
+    <input type="text" id="nome" placeholder="Nome da pessoa" required />
+    <input type="text" id="cpf" placeholder="CPF (somente números)" required maxlength="11" />
+    <input type="text" id="produto" placeholder="Produto alugado" required />
+    <input type="number" id="valor" placeholder="Valor (R$)" step="0.01" required />
+    <button type="submit">Adicionar Registro</button>
+    <p class="error" id="erroCpf"></p>
+  </form>
 
+  <h2>Registros</h2>
   <table>
     <thead>
-      <tr>
-        <th>Nome</th>
-        <th>CPF</th>
-        <th>Item</th>
-        <th>Valor</th>
-        <th>Ações</th>
-      </tr>
+      <tr><th>Nome</th><th>CPF</th><th>Produto</th><th>Valor (R$)</th></tr>
     </thead>
-    <tbody id="tabela-alugueis"></tbody>
+    <tbody id="listaRegistros"></tbody>
   </table>
 
-  <h2>Controle Financeiro</h2>
-  <input id="descricao" placeholder="Descrição" />
-  <input id="valorFinanceiro" placeholder="Valor (R$)" type="number" />
-  <select id="tipo">
-    <option value="entrada">Entrada</option>
-    <option value="saida">Saída</option>
-  </select>
-  <button onclick="adicionarFinanceiro()">Registrar</button>
-  <button onclick="limparFinanceiro()" class="danger">Limpar Controle Financeiro</button>
-  <button onclick="exportarFinanceiro()">Exportar Financeiro (JSON)</button>
-  <button onclick="restaurarBackupFinanceiro()">Restaurar Último Backup</button>
+  <script type="module">
+    // Importa Firebase e Firestore
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import {
+      getFirestore,
+      collection,
+      addDoc,
+      getDocs,
+      query,
+      orderBy
+    } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-  <table>
-    <thead>
-      <tr>
-        <th>Descrição</th>
-        <th>Valor</th>
-        <th>Tipo</th>
-      </tr>
-    </thead>
-    <tbody id="tabela-financeiro"></tbody>
-  </table>
+    // Configuração do seu projeto Firebase (substitua aqui se mudar)
+    const firebaseConfig = {
+      apiKey: "AIzaSyD43W9tbnk7dpnTWwiIMEX1OqLJAYNhuhQ",
+      authDomain: "controle-alugueis-7db29.firebaseapp.com",
+      projectId: "controle-alugueis-7db29",
+      storageBucket: "controle-alugueis-7db29.firebasestorage.app",
+      messagingSenderId: "280373132735",
+      appId: "1:280373132735:web:7e79cc69a69cb6ee6a350a"
+    };
 
-  <h3>Saldo Atual: R$ <span id="saldo">0</span></h3>
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
 
-  <script>
-    let alugueis = JSON.parse(localStorage.getItem('alugueis') || '[]');
-    let financeiro = JSON.parse(localStorage.getItem('financeiro') || '[]');
-    let indiceEdicao = -1;
+    const form = document.getElementById("formAluguel");
+    const listaRegistros = document.getElementById("listaRegistros");
+    const erroCpf = document.getElementById("erroCpf");
 
-    function salvar() {
-      localStorage.setItem('alugueis', JSON.stringify(alugueis));
-      localStorage.setItem('financeiro_backup', localStorage.getItem('financeiro') || '[]');
-      localStorage.setItem('financeiro', JSON.stringify(financeiro));
-    }
-
+    // Função simples para validar CPF (validação básica)
     function validarCPF(cpf) {
-      cpf = cpf.replace(/[^\d]+/g, '');
-      if (cpf.length !== 11 || /^()\1+$/.test(cpf)) return false;
-
+      cpf = cpf.replace(/\D/g, "");
+      if (cpf.length !== 11) return false;
       let soma = 0;
-      for (let i = 0; i < 9; i++) soma += parseInt(cpf[i]) * (10 - i);
+      for (let i = 0; i < 9; i++) {
+        soma += parseInt(cpf.charAt(i)) * (10 - i);
+      }
       let resto = (soma * 10) % 11;
       if (resto === 10 || resto === 11) resto = 0;
-      if (resto !== parseInt(cpf[9])) return false;
-
+      if (resto !== parseInt(cpf.charAt(9))) return false;
       soma = 0;
-      for (let i = 0; i < 10; i++) soma += parseInt(cpf[i]) * (11 - i);
+      for (let i = 0; i < 10; i++) {
+        soma += parseInt(cpf.charAt(i)) * (11 - i);
+      }
       resto = (soma * 10) % 11;
       if (resto === 10 || resto === 11) resto = 0;
-      return resto === parseInt(cpf[10]);
+      if (resto !== parseInt(cpf.charAt(10))) return false;
+      return true;
     }
 
-    function salvarAluguel() {
-      const nome = document.getElementById('nomePessoa').value.trim();
-      const cpf = document.getElementById('cpfPessoa').value.trim();
-      const item = document.getElementById('item').value.trim();
-      const valor = document.getElementById('valor').value;
+    // Carrega e mostra os registros do Firestore
+    async function carregarRegistros() {
+      listaRegistros.innerHTML = "";
+      const q = query(collection(db, "alugueis"), orderBy("nome"));
+      const querySnapshot = await getDocs(q);
+      querySnapshot.forEach((doc) => {
+        const data = doc.data();
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${data.nome}</td>
+          <td>${data.cpf}</td>
+          <td>${data.produto}</td>
+          <td>R$ ${parseFloat(data.valor).toFixed(2)}</td>
+        `;
+        listaRegistros.appendChild(tr);
+      });
+    }
 
-      if (!nome || !cpf || !item || !valor) {
-        alert("Preencha todos os campos.");
-        return;
-      }
+    // Envia um novo registro para o Firestore
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
 
+      const nome = form.nome.value.trim();
+      const cpf = form.cpf.value.trim();
+      const produto = form.produto.value.trim();
+      const valor = form.valor.value.trim();
+
+      erroCpf.textContent = "";
       if (!validarCPF(cpf)) {
-        alert("CPF inválido.");
+        erroCpf.textContent = "CPF inválido. Insira 11 números válidos.";
         return;
       }
 
-      const novo = { nome, cpf, item, valor };
-      if (indiceEdicao === -1) {
-        alugueis.push(novo);
-      } else {
-        alugueis[indiceEdicao] = novo;
-        indiceEdicao = -1;
+      try {
+        await addDoc(collection(db, "alugueis"), {
+          nome,
+          cpf,
+          produto,
+          valor: parseFloat(valor)
+        });
+        form.reset();
+        carregarRegistros();
+      } catch (error) {
+        alert("Erro ao salvar no Firebase: " + error.message);
       }
+    });
 
-      salvar();
-      atualizarTabelas();
-      limparFormulario();
-    }
-
-    function limparFormulario() {
-      document.getElementById('nomePessoa').value = '';
-      document.getElementById('cpfPessoa').value = '';
-      document.getElementById('item').value = '';
-      document.getElementById('valor').value = '';
-    }
-
-    function editarAluguel(i) {
-      const a = alugueis[i];
-      document.getElementById('nomePessoa').value = a.nome;
-      document.getElementById('cpfPessoa').value = a.cpf;
-      document.getElementById('item').value = a.item;
-      document.getElementById('valor').value = a.valor;
-      indiceEdicao = i;
-    }
-
-    function removerAluguel(i) {
-      if (confirm("Remover este aluguel?")) {
-        alugueis.splice(i, 1);
-        salvar();
-        atualizarTabelas();
-      }
-    }
-
-    function adicionarFinanceiro() {
-      const descricao = document.getElementById('descricao').value.trim();
-      const valor = parseFloat(document.getElementById('valorFinanceiro').value);
-      const tipo = document.getElementById('tipo').value;
-
-      if (!descricao || isNaN(valor)) {
-        alert("Preencha todos os campos.");
-        return;
-      }
-
-      financeiro.push({ descricao, valor, tipo });
-      salvar();
-      atualizarTabelas();
-
-      document.getElementById('descricao').value = '';
-      document.getElementById('valorFinanceiro').value = '';
-    }
-
-    function limparFinanceiro() {
-      if (confirm("Tem certeza que deseja apagar todos os registros do controle financeiro?")) {
-        financeiro = [];
-        salvar();
-        atualizarTabelas();
-      }
-    }
-
-    function exportarFinanceiro() {
-      const dados = JSON.stringify(financeiro, null, 2);
-      const blob = new Blob([dados], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = 'financeiro-backup.json';
-      link.click();
-    }
-
-    function restaurarBackupFinanceiro() {
-      if (confirm("Deseja restaurar o último backup do controle financeiro?")) {
-        financeiro = JSON.parse(localStorage.getItem('financeiro_backup') || '[]');
-        salvar();
-        atualizarTabelas();
-      }
-    }
-
-    function atualizarTabelas() {
-      const tabela = document.getElementById('tabela-alugueis');
-      tabela.innerHTML = '';
-      alugueis.forEach((a, i) => {
-        tabela.innerHTML += `
-          <tr>
-            <td>${a.nome}</td>
-            <td>${a.cpf}</td>
-            <td>${a.item}</td>
-            <td>R$ ${parseFloat(a.valor).toFixed(2)}</td>
-            <td class="actions">
-              <button onclick="editarAluguel(${i})">Editar</button>
-              <button onclick="removerAluguel(${i})" class="danger">Remover</button>
-            </td>
-          </tr>`;
-      });
-
-      const tabelaFin = document.getElementById('tabela-financeiro');
-      tabelaFin.innerHTML = '';
-      let saldo = 0;
-      financeiro.forEach(f => {
-        const valor = parseFloat(f.valor);
-        saldo += f.tipo === 'entrada' ? valor : -valor;
-        tabelaFin.innerHTML += `
-          <tr>
-            <td>${f.descricao}</td>
-            <td>R$ ${valor.toFixed(2)}</td>
-            <td>${f.tipo}</td>
-          </tr>`;
-      });
-
-      document.getElementById('saldo').textContent = saldo.toFixed(2);
-    }
-
-    atualizarTabelas();
+    // Carrega os registros ao abrir a página
+    carregarRegistros();
   </script>
 </body>
 </html>
