@@ -1,117 +1,121 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Controle de Aluguéis + Financeiro</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet" />
+  <meta charset="UTF-8">
+  <title>Controle de Aluguéis</title>
   <style>
-    /* Mesmos estilos do exemplo anterior, arredondados e limpos */
     body {
-      margin: 0;
-      font-family: 'Inter', sans-serif;
-      background-color: #f4f4f4;
-      color: #333;
+      font-family: Arial, sans-serif;
+      margin: 20px;
     }
-    header {
-      background-color: #0d6efd;
-      padding: 1rem;
-      display: flex;
-      justify-content: center;
-      gap: 1rem;
+    .menu {
+      margin-bottom: 20px;
     }
-    header button {
-      background: white;
-      color: #0d6efd;
+    .menu button {
+      padding: 10px 20px;
+      margin-right: 10px;
+      border-radius: 8px;
       border: none;
-      padding: 0.5rem 1rem;
-      border-radius: 10px;
-      font-weight: 600;
+      background-color: #007bff;
+      color: white;
       cursor: pointer;
     }
-    section {
-      max-width: 600px;
-      margin: 1rem auto;
-      background: white;
-      padding: 1.5rem;
-      border-radius: 12px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    .menu button:hover {
+      background-color: #0056b3;
+    }
+    .section {
       display: none;
     }
-    section.active {
+    .section.active {
       display: block;
-    }
-    input, select {
-      width: 100%;
-      padding: 0.5rem;
-      margin: 0.5rem 0;
-      border: 1px solid #ccc;
-      border-radius: 8px;
-    }
-    button.submit {
-      background: #0d6efd;
-      color: white;
-      border: none;
-      padding: 0.5rem 1rem;
-      border-radius: 10px;
-      font-weight: 600;
-      cursor: pointer;
-      margin-top: 1rem;
     }
     table {
       width: 100%;
-      margin-top: 1rem;
       border-collapse: collapse;
-    }
-    table, th, td {
-      border: 1px solid #ccc;
+      margin-top: 10px;
     }
     th, td {
-      padding: 0.5rem;
+      border: 1px solid #ccc;
+      padding: 8px;
       text-align: left;
     }
-    .totals {
-      margin-top: 1rem;
-      font-weight: bold;
+    .actions {
+      margin-top: 10px;
+    }
+    .actions button {
+      margin-right: 10px;
+      padding: 6px 12px;
+      border-radius: 5px;
+      background-color: #dc3545;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+    .actions button:hover {
+      background-color: #c82333;
     }
   </style>
 </head>
 <body>
-  <header>
+
+  <div class="menu">
     <button onclick="toggleSection('alugueis')">Aluguéis</button>
     <button onclick="toggleSection('financeiro')">Financeiro</button>
-  </header>
+  </div>
 
-  <section id="alugueis">
-    <h2>Registrar Aluguel</h2>
-    <input type="text" id="produto" placeholder="Produto" />
-    <input type="number" id="valor" placeholder="Valor" />
-    <input type="text" id="nomePessoa" placeholder="Nome da Pessoa" />
-    <input type="text" id="cpf" placeholder="CPF (somente números)" />
-    <button class="submit" onclick="salvarAluguel()">Salvar</button>
-    <pre id="listaAlugueis"></pre>
-  </section>
+  <div id="alugueis" class="section active">
+    <h2>Cadastro de Aluguéis</h2>
+    <input type="text" id="nomeCliente" placeholder="Nome do Cliente"><br><br>
+    <input type="text" id="cpfCliente" placeholder="CPF"><br><br>
+    <input type="text" id="produto" placeholder="Produto alugado"><br><br>
+    <input type="number" id="valor" placeholder="Valor"><br><br>
+    <button onclick="salvarAluguel()">Salvar</button>
 
-  <section id="financeiro">
-    <h2>Controle Financeiro</h2>
-    <select id="tipo">
-      <option value="entrada">Entrada</option>
-      <option value="saida">Saída</option>
-    </select>
-    <input type="text" id="nomeFinanceiro" placeholder="Nome" />
-    <input type="number" id="valorFinanceiro" placeholder="Valor" />
-    <input type="date" id="dataFinanceiro" />
-    <input type="text" id="descricao" placeholder="Descrição (opcional)" />
-    <button class="submit" onclick="salvarMovimentacao()">Registrar</button>
-
-    <div>
-      <label>Filtrar por período:</label><br />
-      <input type="date" id="dataInicio" /> até
-      <input type="date" id="dataFim" />
-      <button onclick="filtrarPeriodo()">Filtrar</button>
-      <button onclick="limparFiltro()">Limpar Filtro</button>
+    <div class="actions">
+      <button onclick="limparAlugueis()">Limpar Todos os Aluguéis</button>
     </div>
 
+    <h3>Registros</h3>
+    <table id="tabelaAlugueis">
+      <thead>
+        <tr>
+          <th>Cliente</th>
+          <th>CPF</th>
+          <th>Produto</th>
+          <th>Valor</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
+  <div id="financeiro" class="section">
+    <h2>Controle Financeiro</h2>
+    <select id="tipoFinanceiro">
+      <option value="">Tipo</option>
+      <option value="entrada">Entrada</option>
+      <option value="saida">Saída</option>
+    </select><br><br>
+    <input type="text" id="nomeFinanceiro" placeholder="Nome"><br><br>
+    <input type="number" id="valorFinanceiro" placeholder="Valor"><br><br>
+    <input type="date" id="dataFinanceiro"><br><br>
+    <input type="text" id="descricao" placeholder="Descrição (opcional)"><br><br>
+    <button onclick="salvarFinanceiro()">Salvar</button>
+
+    <div class="actions">
+      <button onclick="limparFinanceiro()">Limpar Financeiro</button>
+    </div>
+
+    <h3>Resumo</h3>
+    <div id="resumoFinanceiro"></div>
+
+    <h3>Filtrar por Período</h3>
+    <input type="date" id="dataInicio">
+    <input type="date" id="dataFim">
+    <button onclick="filtrarPeriodo()">Filtrar</button>
+    <button onclick="limparFiltro()">Limpar Filtro</button>
+
+    <h3>Movimentações</h3>
     <table id="tabelaFinanceiro">
       <thead>
         <tr>
@@ -124,224 +128,172 @@
       </thead>
       <tbody></tbody>
     </table>
+  </div>
 
-    <div class="totals" id="resumoFinanceiro"></div>
-  </section>
+  <script type="module">
+    // Firebase config
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
+    import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, query, orderBy, where } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
 
-  <!-- Firebase SDKs -->
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-
-  <script>
-    // Configuração do Firebase - substitua pelos seus dados
     const firebaseConfig = {
-      apiKey: "AIzaSyD43W9tbnk7dpnTWwiIMEX1OqLJAYNhuhQ",
-      authDomain: "controle-alugueis-7db29.firebaseapp.com",
-      projectId: "controle-alugueis-7db29",
-      storageBucket: "controle-alugueis-7db29.appspot.com",
-      messagingSenderId: "280373132735",
-      appId: "1:280373132735:web:7e79cc69a69cb6ee6a350a"
+      apiKey: "SUA_API_KEY",
+      authDomain: "SEU_AUTH_DOMAIN",
+      projectId: "SEU_PROJECT_ID",
+      storageBucket: "SEU_STORAGE_BUCKET",
+      messagingSenderId: "SEU_MESSAGING_ID",
+      appId: "SEU_APP_ID"
     };
 
-    // Inicializa Firebase
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.firestore();
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
 
-    // Toggle de abas
     function toggleSection(id) {
-      document.querySelectorAll('section').forEach(sec => sec.classList.remove('active'));
+      document.querySelectorAll('.section').forEach(sec => sec.classList.remove('active'));
       document.getElementById(id).classList.add('active');
-      if (id === 'financeiro') carregarMovimentacoes(); // Carrega dados ao abrir financeiro
-      if (id === 'alugueis') carregarAlugueis(); // Carrega dados ao abrir aluguéis
     }
 
-    // Validação CPF simples
-    function validarCPF(cpf) {
-      cpf = cpf.replace(/\D/g, '');
-      if (cpf.length !== 11 || /^(\d)\1+$/.test(cpf)) return false;
-      let soma = 0;
-      for (let i = 0; i < 9; i++) soma += parseInt(cpf.charAt(i)) * (10 - i);
-      let dig1 = 11 - (soma % 11);
-      if (dig1 >= 10) dig1 = 0;
-      if (dig1 !== parseInt(cpf.charAt(9))) return false;
-      soma = 0;
-      for (let i = 0; i < 10; i++) soma += parseInt(cpf.charAt(i)) * (11 - i);
-      let dig2 = 11 - (soma % 11);
-      if (dig2 >= 10) dig2 = 0;
-      return dig2 === parseInt(cpf.charAt(10));
-    }
-
-    // Salvar aluguel no Firestore
     async function salvarAluguel() {
+      const nome = document.getElementById('nomeCliente').value.trim();
+      const cpf = document.getElementById('cpfCliente').value.trim();
       const produto = document.getElementById('produto').value.trim();
       const valor = parseFloat(document.getElementById('valor').value);
-      const nome = document.getElementById('nomePessoa').value.trim();
-      const cpf = document.getElementById('cpf').value.trim();
 
-      if (!produto || !valor || !nome || !cpf) {
-        alert('Preencha todos os campos');
-        return;
-      }
-      if (!validarCPF(cpf)) {
-        alert('CPF inválido');
+      if (!nome || !cpf || !produto || isNaN(valor)) {
+        alert('Preencha todos os campos corretamente!');
         return;
       }
 
-      try {
-        await db.collection('aluguéis').add({
-          produto,
-          valor,
-          nome,
-          cpf,
-          data: new Date().toISOString()
-        });
-        alert('Aluguel salvo com sucesso!');
-        document.getElementById('produto').value = '';
-        document.getElementById('valor').value = '';
-        document.getElementById('nomePessoa').value = '';
-        document.getElementById('cpf').value = '';
-        carregarAlugueis();
-      } catch (e) {
-        alert('Erro ao salvar aluguel: ' + e.message);
-      }
+      await addDoc(collection(db, 'aluguels'), { nome, cpf, produto, valor });
+      alert('Aluguel salvo!');
+      document.getElementById('nomeCliente').value = '';
+      document.getElementById('cpfCliente').value = '';
+      document.getElementById('produto').value = '';
+      document.getElementById('valor').value = '';
+      carregarAlugueis();
     }
 
-    // Carregar aluguéis do Firestore
     async function carregarAlugueis() {
-      const lista = document.getElementById('listaAlugueis');
-      lista.textContent = 'Carregando...';
-      try {
-        const snapshot = await db.collection('aluguéis').orderBy('data', 'desc').get();
-        if (snapshot.empty) {
-          lista.textContent = 'Nenhum aluguel registrado.';
-          return;
-        }
-        let html = '<ul>';
-        snapshot.forEach(doc => {
-          const d = doc.data();
-          html += `<li><strong>${d.produto}</strong> - R$ ${d.valor.toFixed(2)} - ${d.nome} - CPF: ${d.cpf} - ${new Date(d.data).toLocaleString()}</li>`;
-        });
-        html += '</ul>';
-        lista.innerHTML = html;
-      } catch (e) {
-        lista.textContent = 'Erro ao carregar aluguéis: ' + e.message;
-      }
+      const snapshot = await getDocs(collection(db, 'aluguels'));
+      const tbody = document.querySelector('#tabelaAlugueis tbody');
+      tbody.innerHTML = '';
+      snapshot.forEach(doc => {
+        const d = doc.data();
+        tbody.innerHTML += `
+          <tr>
+            <td>${d.nome}</td>
+            <td>${d.cpf}</td>
+            <td>${d.produto}</td>
+            <td>R$ ${d.valor.toFixed(2)}</td>
+          </tr>
+        `;
+      });
     }
 
-    // Salvar movimentação financeira no Firestore
-    async function salvarMovimentacao() {
-      const tipo = document.getElementById('tipo').value;
+    async function limparAlugueis() {
+      if (!confirm("Tem certeza que deseja apagar todos os registros de aluguéis?")) return;
+      const snapshot = await getDocs(collection(db, 'aluguels'));
+      snapshot.forEach(async (d) => await deleteDoc(doc(db, 'aluguels', d.id)));
+      alert("Registros de aluguel apagados.");
+      carregarAlugueis();
+    }
+
+    async function salvarFinanceiro() {
+      const tipo = document.getElementById('tipoFinanceiro').value;
       const nome = document.getElementById('nomeFinanceiro').value.trim();
       const valor = parseFloat(document.getElementById('valorFinanceiro').value);
       const data = document.getElementById('dataFinanceiro').value;
       const descricao = document.getElementById('descricao').value.trim();
 
-      if (!tipo || !nome || !valor || !data) {
+      if (!tipo || !nome || isNaN(valor) || !data) {
         alert('Preencha todos os campos obrigatórios!');
         return;
       }
 
-      try {
-        await db.collection('financeiro').add({
-          tipo,
-          nome,
-          valor,
-          data,
-          descricao,
-          timestamp: new Date(data).getTime()
-        });
-        alert('Movimentação salva!');
-        document.getElementById('nomeFinanceiro').value = '';
-        document.getElementById('valorFinanceiro').value = '';
-        document.getElementById('dataFinanceiro').value = '';
-        document.getElementById('descricao').value = '';
-        carregarMovimentacoes();
-      } catch (e) {
-        alert('Erro ao salvar movimentação: ' + e.message);
-      }
+      await addDoc(collection(db, 'financeiro'), {
+        tipo, nome, valor, data, descricao,
+        timestamp: new Date(data).getTime()
+      });
+
+      alert('Movimentação salva!');
+      document.getElementById('tipoFinanceiro').value = '';
+      document.getElementById('nomeFinanceiro').value = '';
+      document.getElementById('valorFinanceiro').value = '';
+      document.getElementById('dataFinanceiro').value = '';
+      document.getElementById('descricao').value = '';
+      carregarMovimentacoes();
     }
 
-    // Carregar movimentações do Firestore (com filtro opcional)
     async function carregarMovimentacoes(filtroInicio, filtroFim) {
       const tbody = document.querySelector('#tabelaFinanceiro tbody');
       tbody.innerHTML = '<tr><td colspan="5">Carregando...</td></tr>';
 
-      try {
-        let query = db.collection('financeiro').orderBy('timestamp', 'desc');
+      let q = query(collection(db, 'financeiro'), orderBy('timestamp', 'desc'));
+      if (filtroInicio) q = query(q, where('timestamp', '>=', filtroInicio.getTime()));
+      if (filtroFim) q = query(q, where('timestamp', '<=', filtroFim.getTime()));
 
-        if (filtroInicio) {
-          query = query.where('timestamp', '>=', filtroInicio.getTime());
-        }
-        if (filtroFim) {
-          query = query.where('timestamp', '<=', filtroFim.getTime());
-        }
+      const snapshot = await getDocs(q);
+      const dados = [];
+      let html = '';
 
-        const snapshot = await query.get();
-        if (snapshot.empty) {
-          tbody.innerHTML = '<tr><td colspan="5">Nenhuma movimentação encontrada.</td></tr>';
-          atualizarResumo([]);
-          return;
-        }
-
-        const dados = [];
-        let html = '';
-        snapshot.forEach(doc => {
-          const d = doc.data();
-          dados.push(d);
-          html += `<tr>
-            <td>${d.tipo === 'entrada' ? 'Entrada' : 'Saída'}</td>
-            <td>${d.nome}</td>
-            <td>${new Date(d.data).toLocaleDateString()}</td>
-            <td>R$ ${d.valor.toFixed(2)}</td>
-            <td>${d.descricao || ''}</td>
-          </tr>`;
-        });
-        tbody.innerHTML = html;
-        atualizarResumo(dados);
-      } catch (e) {
-        tbody.innerHTML = '<tr><td colspan="5">Erro ao carregar dados: ' + e.message + '</td></tr>';
-      }
-    }
-
-    // Atualiza o resumo financeiro (totais)
-    function atualizarResumo(dados) {
-      let totalEntradas = 0;
-      let totalSaidas = 0;
-
-      dados.forEach(d => {
-        if (d.tipo === 'entrada') totalEntradas += d.valor;
-        else if (d.tipo === 'saida') totalSaidas += d.valor;
+      snapshot.forEach(doc => {
+        const d = doc.data();
+        dados.push(d);
+        html += `<tr>
+          <td>${d.tipo === 'entrada' ? 'Entrada' : 'Saída'}</td>
+          <td>${d.nome}</td>
+          <td>${new Date(d.data).toLocaleDateString()}</td>
+          <td>R$ ${d.valor.toFixed(2)}</td>
+          <td>${d.descricao || ''}</td>
+        </tr>`;
       });
 
-      const saldo = totalEntradas - totalSaidas;
-      const resumo = document.getElementById('resumoFinanceiro');
-      resumo.textContent = `Total Entradas: R$ ${totalEntradas.toFixed(2)} | Total Saídas: R$ ${totalSaidas.toFixed(2)} | Saldo: R$ ${saldo.toFixed(2)}`;
+      tbody.innerHTML = html || '<tr><td colspan="5">Nenhuma movimentação encontrada.</td></tr>';
+      atualizarResumo(dados);
     }
 
-    // Filtrar por período
+    function atualizarResumo(dados) {
+      let totalEntradas = 0, totalSaidas = 0;
+      dados.forEach(d => {
+        if (d.tipo === 'entrada') totalEntradas += d.valor;
+        else totalSaidas += d.valor;
+      });
+      const saldo = totalEntradas - totalSaidas;
+      document.getElementById('resumoFinanceiro').textContent =
+        `Total Entradas: R$ ${totalEntradas.toFixed(2)} | Total Saídas: R$ ${totalSaidas.toFixed(2)} | Saldo: R$ ${saldo.toFixed(2)}`;
+    }
+
+    async function limparFinanceiro() {
+      if (!confirm("Tem certeza que deseja apagar TODO o controle financeiro?")) return;
+      const snapshot = await getDocs(collection(db, 'financeiro'));
+      snapshot.forEach(async (d) => await deleteDoc(doc(db, 'financeiro', d.id)));
+      alert("Controle financeiro apagado.");
+      carregarMovimentacoes();
+    }
+
     function filtrarPeriodo() {
       const inicio = document.getElementById('dataInicio').value;
       const fim = document.getElementById('dataFim').value;
-      let dataInicio = inicio ? new Date(inicio) : null;
-      let dataFim = fim ? new Date(fim) : null;
+      const d1 = inicio ? new Date(inicio) : null;
+      const d2 = fim ? new Date(fim) : null;
 
-      if (dataInicio && dataFim && dataInicio > dataFim) {
-        alert('Data início deve ser menor ou igual à data fim');
+      if (d1 && d2 && d1 > d2) {
+        alert('Data início não pode ser maior que a data fim!');
         return;
       }
 
-      carregarMovimentacoes(dataInicio, dataFim);
+      carregarMovimentacoes(d1, d2);
     }
 
-    // Limpar filtro
     function limparFiltro() {
       document.getElementById('dataInicio').value = '';
       document.getElementById('dataFim').value = '';
       carregarMovimentacoes();
     }
 
-    // Inicializa com a aba Aluguéis aberta
-    toggleSection('alugueis');
+    // Inicializa
+    carregarAlugueis();
+    carregarMovimentacoes();
   </script>
+
 </body>
 </html>
